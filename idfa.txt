@@ -1,0 +1,85 @@
+#import <Foundation/Foundation.h>
+#import <AdSupport/ASIdentifierManager.h>
+
+@interface iOS_IdfaPlugin : NSObject
+
++(iOS_IdfaPlugin*)sharedInstance;
+-(void)dealloc;
+
+@end
+
+static iOS_IdfaPlugin *_instance = [iOS_IdfaPlugin sharedInstance];
+
+
+@implementation iOS_IdfaPlugin
+
+
++(iOS_IdfaPlugin*)sharedInstance
+{
+    return _instance;
+}
+
+
++(void)sendToUnity:(NSString*) className methodName:(NSString*)methodName param:(NSString*)param;
+{
+	UnitySendMessage([className UTF8String], [methodName UTF8String] ,[param UTF8String]);
+}
+ 
+-(void) CheckIdfa
+{
+    if([[ASIdentifierManager sharedManager] isAdvertisingTrackingEnabled])
+   {
+       NSUUID *IDFA = [[ASIdentifierManager sharedManager] advertisingIdentifier];
+       //return [IDFA UUIDString];
+	   NSString* str = IDFA;
+	   
+	   UnitySendMessage("IdfaManager","GetIdfa",str);
+   }
+}
+
+char * MakeStringCopy(const char * string)
+{
+    
+    if( string == NULL )
+        
+        return NULL;
+    
+    char * res = (char *)malloc( strlen( string ) + 1 );
+    
+    strcpy( res, string );
+    
+    return res;
+    
+}
+
+@end
+
+// Converts NSString to C style string by way of copy (Mono will free it)
+#define MakeStringCopy( _x_ ) ( _x_ != NULL && [_x_ isKindOfClass:[NSString class]] ) ? strdup( [_x_ UTF8String] ) : NULL
+
+// Converts C style string to NSString
+#define GetStringParam( _x_ ) ( _x_ != NULL ) ? [NSString stringWithUTF8String:_x_] : [NSString stringWithUTF8String:""]
+
+// Converts C style string to NSString as long as it isnt empty
+#define GetStringParamOrNil( _x_ ) ( _x_ != NULL && strlen( _x_ ) ) ? [NSString stringWithUTF8String:_x_] : nil
+
+extern "C"
+{
+    void _checkIdfa()
+    {
+        [[iOS_IdfaPlugin sharedInstance] CheckIdfa];
+        
+    }
+}
+/*
++ (NSString *)identifierForAdvertising
+{
+   if([[ASIdentifierManager sharedManager] isAdvertisingTrackingEnabled])
+   {
+       NSUUID *IDFA = [[ASIdentifierManager sharedManager] advertisingIdentifier];
+       return [IDFA UUIDString];
+   }
+
+    return nil;
+} 
+*/
